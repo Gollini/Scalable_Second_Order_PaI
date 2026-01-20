@@ -1,28 +1,32 @@
-### **Fishing For Cheap And Efficient Pruners At Initialization**
+# **What Scalable Second-Order Information Knows for Pruning at Initialization**
 
-This is the official repository for the **Preprint** "Fishing For Cheap And Efficient Pruners At Initialization." Link: ArXiV
+This is the official repository for the Preprint "What Scalable Second-Order Information Knows for Pruning at Initialization." Link: ArXiV
 
 
 ## **Abstract**
-Pruning offers a promising solution to mitigate the associated costs and environmental impact of deploying large deep neural networks (DNNs). Traditional approaches rely on computationally expensive trained models or time-consuming iterative prune-retrain cycles, undermining their utility in resource-constrained settings. To address this issue, we build upon the established principles of saliency (LeCun et al., 1989) and connection sensitivity (Lee et al., 2018) to tackle the challenging problem of one-shot pruning neural networks (NNs) before training (PBT) at initialization. 
 
-We introduce **Fisher-Taylor Sensitivity (FTS)**, a computationally cheap and efficient pruning criterion based on the empirical Fisher Information Matrix (FIM) diagonal, offering a viable alternative for integrating first- and second-order information to identify a model’s structurally important parameters. Although the FIM-Hessian equivalency only holds for convergent models that maximize the likelihood, recent studies (Karakida et al., 2019) suggest that, even at initialization, the FIM captures essential geometric information of parameters in overparameterized NNs, providing the basis for our method. 
+Pruning remains an effective strategy for reducing both the costs and environmental impact associated with deploying large neural networks (NNs) while maintaining performance. Classical methods, such as OBD (LeCun, 1989) and OBS (Hassibi, 1992), demonstrate that utilizing curvature information can significantly enhance the balance between network complexity and performance. However, the computation and storage of the Hessian matrix make it impractical for modern NNs, motivating the use of approximations.
 
-Finally, we demonstrate empirically that **layer collapse**, a critical limitation of data-dependent pruning methodologies, is easily overcome by pruning within a single training epoch after initialization. We perform experiments on ResNet18 and VGG19 with CIFAR-10 and CIFAR-100, widely used benchmarks in pruning research. Our method achieves competitive performance against state-of-the-art techniques for one-shot PBT, even under extreme sparsity conditions.
+Recent research (Gur, 2018; Karikada, 2019) suggests that the top eigenvalues guide optimization in a small subspace, are identifiable early, and remain consistent during training. Motivated by these findings, we revisit pruning at initialization (PaI) to evaluate scalable, unbiased second-order approximations, such as the Empirical Fisher and Hutchinson diagonals. 
+
+Our experiments show that these methods capture sufficient curvature information to improve the identification of critical parameters compared to first-order baselines, while maintaining linear complexity.
+Additionally, we empirically demonstrate that updating batch normalization statistics as a warmup phase improves the performance of data-dependent criteria and mitigates the issue of layer collapse. Notably, Hutchinson-based criteria consistently outperformed or matched existing PaI algorithms across various models (including VGG, ResNet, and ViT) and datasets (such as CIFAR-10/100, TinyImageNet, and ImageNet).
+
+Our findings suggest that scalable second-order approximations strike an effective balance between computational efficiency and accuracy, making them a valuable addition to the pruning toolkit. We make our code available 
 
 ---
 
 ## **Installation & Setup**
-To reproduce the experiments, follow these steps:
+To reproduce main experiments, follow these steps:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Gollini/Fisher_Taylor_Sensitivity.git
+   git clone https://github.com/Gollini/Scalable_Second_Order_PaI.git
    ```
 
 2. **Create and activate a Conda environment:**
    ```bash 
-   conda create --name pruning_env python=3.12.4-y
+   conda create --name pruning_env python=3.12.4
    conda activate pruning_env
    ```
 
@@ -37,16 +41,61 @@ To reproduce the experiments, follow these steps:
 
 5. **Run experiments automatically:**
    ```bash
-   python main.py --experiment pbt --config exp_configs/
+   python main.py --experiment pbt --params_path exp_configs/
    ```
 
----
-
-- Experiments were runned with three **random seeds**: 0, 42, 123.
-- We share ready to run json files.
+**We share ready to run json files for ResNet18 with CIFAR10.**
 
 ---
+## Datasets
 
+The table below shows the available datasets and their corresponding code for running experiments.
+
+| **Dataset Name** | **Code** |
+|---------------------|----------|
+| CIFAR-10 | `cifar10` |
+| CIFAR-100  | `cifar100` |
+| TinyImageNet | `tinyimagenet` |
+
+The current codebase supports automatic download and preprocessing for the following datasets: CIFAR10, CIFAR100 and TinyImageNet. The dataset will be downloaded and prepared automatically upon first use. After, we recommend to change the download flag to `False` in `data/cifar.py` and `data/tiny_imagenet.py`.
+
+To specify a dataset in your JSON configuration file, update the `"dataset"` field:
+```json
+    "dataset": {
+        "class": "cifar10",
+        "batch_size": 512,
+        ...
+    },
+```
+---
+## Models
+The table below shows the available models and their correponding code for running experiments.
+
+| **Model Name** | **Code example** |
+|---------------------|----------|
+| ResNets - CIFAR-10/100 | `resnet18` |
+| VGGs - CIFAR-10/100  | `VGG19` |
+| ResNets - TinyImageNet | `ResNet18_TinyImageNet` |
+
+
+To specify a model in your JSON configuration file, update the `"model"` field:
+```json
+   "model":{
+      "class": "resnet18",
+      "num_classes": 10
+   },
+```
+---
+
+Experiments were runned with **three random seeds** (0, 42, and 123) for model initalization. To specify a seed in your JSON configuration file, update the `"general"` field:
+```json
+   "general":{
+      ...
+      "seed": 0,
+      ...
+   },
+```
+---
 ## **Compressor Codes**
 The table below summarizes the different compression methods available and their corresponding codes for running experiments.
 
@@ -58,34 +107,25 @@ The table below summarizes the different compression methods available and their
 | Gradient Norm (GN) | `grad_norm` |
 | SNIP | `snip` |
 | GraSP | `grasp` |
+| Synflow | `synflow` |
 | Fisher Diagonal (FD) | `fisher_diag` |
 | Fisher Pruning (FP) | `fisher_pruner` |
 | Fisher-Taylor Sensitivity (FTS) | `fts` |
-| Fisher Brain Surgeon Sensitivity (FBSS) | `fbss` |
+| Hutchinson Diagonal (HD) | `hutch_diag` |
+| Hutchinson Pruning (HP) | `hutch_pruning` |
+| Hutchinson-Taylor Sensitivity (HTS) | `hts` |
 
 To specify a compressor in your JSON configuration file, update the `"compressor"` field:
 ```json
 "compressor": {
-    "class": "none",
-    "mask": "global",
-    "sparsity": 0,
-    "warmup": 0,
-    "batch_size": 1
+   "class": "none",
+   "mask": "global",
+   "sparsity": 0.0,
+   "warmup": 0,
+   "batch_size": 1,
+   "per_class_samples": 10
 }
 ```
-
----
-
-## **Table 1: Performance of Different Pruning Methods on ResNet18 with CIFAR-10**
-
-| Sparsity | Random | Magnitude | GN | SNIP | GraSP | FD | FP | FTS | FBSS |
-|-------------|---------|-----------|----|------|------|----|----|----|----|
-| 0.80 | 90.78 ± 0.08 | 91.10 ± 0.12 | 90.95 ± 0.35 | 90.74 ± 0.10 | 87.18 ± 0.51 | 90.95 ± 0.11 | 91.08 ± 0.06 | 90.94 ± 0.22 | 90.73 ± 0.33 |
-| 0.90 | 89.35 ± 0.13 | 89.88 ± 0.28 | 90.39 ± 0.23 | 90.36 ± 0.34 | 86.60 ± 0.51 | 90.04 ± 0.21 | 90.20 ± 0.08 | 90.55 ± 0.23 | 89.22 ± 0.30 |
-| 0.95 | 87.59 ± 0.11 | 89.23 ± 0.19 | 89.00 ± 0.05 | 89.31 ± 0.17 | 86.50 ± 0.05 | 88.61 ± 0.28 | 89.50 ± 0.18 | 89.47 ± 0.32 | 87.58 ± 0.25 |
-| 0.98 | 83.47 ± 0.20 | 85.70 ± 0.33 | 86.43 ± 0.05 | 87.26 ± 0.28 | 85.99 ± 0.08 | 85.61 ± 0.20 | 86.97 ± 0.22 | 87.24 ± 0.32 | 83.40 ± 0.74 |
-| 0.99 | 78.28 ± 0.45 | 71.99 ± 0.28 | 83.47 ± 0.15 | 84.54 ± 0.04 | 84.56 ± 0.46 | 82.13 ± 0.28 | 83.74 ± 0.48 | 84.85 ± 0.18 | 77.60 ± 1.02 |
-
 ---
 
 ## **Contact & Issues**

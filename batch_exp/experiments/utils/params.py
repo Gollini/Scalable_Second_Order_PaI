@@ -1,6 +1,7 @@
 """
 Parameters class to read and store the hyperparameters of an experiment.
 """
+
 import os
 import json
 
@@ -66,10 +67,22 @@ class Hyperparameters:
     def get_num_steps(self):
         return self.training_params["num_steps"]
     
+    def get_local_epochs(self):
+        return self.training_params["local_epochs"]
+    
     def get_compressor(self):
-        comp_dict = dict(self.training_params["compressor"])
-        return comp_dict["class"], comp_dict["mask"], comp_dict["sparsity"], comp_dict["warmup"], comp_dict["batch_size"]
 
+        comp_dict = self.training_params["compressor"]
+
+        return (
+            comp_dict.get("class"),
+            comp_dict.get("mask"),
+            comp_dict.get("sparsity"),
+            comp_dict.get("warmup"),
+            comp_dict.get("batch_size"),
+            comp_dict.get("per_class_samples", None)
+        )
+    
     def get_f_percentile(self):
         comp_dict = dict(self.training_params["compressor"])
         return comp_dict["percentile"]

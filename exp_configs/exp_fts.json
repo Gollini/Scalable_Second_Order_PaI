@@ -1,7 +1,7 @@
 {
     "general": {
         "id": "exp_fts",
-        "description": "resnet18 fts compressor, mask batch size 1, sparsity 0.9.",
+        "description": "resnet18 fts metric, mask batch size 1, warmup 0, sparsity 0.9, seed 0, structured False, distributed False",
         "gpu": {
             "ngpus": 1,
             "gpu_id": 0
@@ -12,34 +12,42 @@
     },
     "dataset": {
         "class": "cifar10",
-        "batch_size": 512
+        "batch_size": 512,
+        "num_workers": 2,
+        "train4val": false
     },
     "model": {
         "class": "resnet18",
         "num_classes": 10
     },
     "training": {
-        "num_steps": 160,
+        "num_steps": 5,
+        "local_epochs": 0,
         "criterion": {
-            "class": "CE"
+            "class": "CE",
+            "kwargs": {}
         },
         "optimizer": {
             "class": "sgd",
-            "learning_rate": 0.01,
-            "momentum": 0.9,
-            "w_decay": 0.0005,
-            "lr_drops": [
-                60,
-                120
-            ],
-            "lr_drop_factor": 0.2
+            "learning_rate": 0.03,
+            "kwargs": {
+                "momentum": 0.9,
+                "w_decay": 0.0005,
+                "scheduler": "step",
+                "lr_drops": [
+                    80,
+                    120
+                ],
+                "lr_drop_factor": 0.2
+            }
         },
         "compressor": {
             "class": "fts",
             "mask": "global",
             "sparsity": 0.9,
             "warmup": 0,
-            "batch_size": 1
+            "batch_size": 1,
+            "per_class_samples": 10
         }
     },
     "validation": {

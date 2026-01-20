@@ -90,7 +90,8 @@ class Logger:
         error[key] = {"traceback": value}
         for arg_k, arg_v in args.items():
             error[key][arg_k] = str(arg_v)
-        self.write(error, self.ERROR_FILE)
+        with open(os.path.join(self.log_dir, self.ERROR_FILE), "w") as out_file:
+            json.dump(error, out_file, indent=4)
 
     def write(self, out_dict, file_name):
         """Write dictionary to a specified JSON filename.

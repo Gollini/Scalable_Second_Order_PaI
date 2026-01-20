@@ -1,12 +1,13 @@
 """
+Author: Ivo Gollini Navarrete & Nicolas Cuadrado Avila
+Institution: Mohamed bin Zayed University of Artificial Intelligence
+Date: January 2026
 Main script to run the experiment(s) in the specified path.
 """
-#Imports
-import os
-import argparse
 
+# Imports
+import argparse
 from batch_exp import batch
-# from batch_exp import batch_lth
 
 def main():
     parser = argparse.ArgumentParser(
@@ -19,7 +20,7 @@ def main():
         help="""Name of the experiment to be run.""",
     )
     parser.add_argument(
-        "--config",
+        "--params_path",
         default="./exp_configs/",
         type=str,
         help="""Path to the json parameter files for the experiment(s) to be run.""",
@@ -34,8 +35,9 @@ def main():
     args = parser.parse_args()
 
     if args.experiment == "pbt":
-        exprs_batch = batch.ExperimentBatch(args.config, args.debug)
+        exprs_batch = batch.ExperimentBatch(args.params_path, args.debug)
         exprs_batch.run()
 
+
 if __name__ == "__main__":
-    main()    
+    main()

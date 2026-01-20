@@ -1,9 +1,11 @@
 """
 Prune Before Training. One-shot pruning of the model before training.
 """
+
 # Imports
 import os
 import time
+import random
 
 from tqdm import tqdm
 
@@ -22,13 +24,16 @@ COMPRESSORS = [
     "none",             # No Pruning
     "random",           # Random Pruning
     "magnitude",        # Magnitude Pruning
-    "grad_norm",        # Gradient Norm
+    "grad_norm",        # Gradient Norm 
     "fisher_diag",      # Fisher Diagonal
     "fisher_pruner",    # Fisher Diagonal Optimal Brain Damage (Fisher Diagonal, only 2nd order Taylor term)
     "snip",             # SNIP (Absolute value of 1st order Taylor term)
     "grasp",            # GraSP (minus parameter times Hessian-vector product)
+    "synflow",          # SynFlow (Synaptic Flow based pruning)
     "fts",              # FTS (1st and 2nd order Taylor terms, only considers diagonal)
-    "fbss",             # FBSS (Full Taylor terms from Lagrangian, only considers diagonal)
+    "hutch_diag",       # Hutchinson Diagonal (Hessian Diagonal)
+    "hutch_pruning",    # Hutchinson Pruning (2nd order Taylor term)
+    "hts",              # HTS (1st and 2nd order Taylor terms, only considers diagonal, absolute value)
 ]
 
 SKIP_LAYERS = ["bias", "linear", "bn"]  # Parameters to skip from sparsification
@@ -66,13 +71,19 @@ class Experiment:
         self.num_steps = self.parameters.get_num_steps()
 
         # Compressor parameters
-        self.comp_class, self.mask, self.sparsity, self.warmup, self.mask_batch = self.parameters.get_compressor()
+        self.comp_class, self.mask, self.sparsity, self.warmup, self.mask_batch, self.per_class_samples = self.parameters.get_compressor()
         if self.comp_class not in COMPRESSORS:
             raise ValueError(f"Compressor {self.comp_class} not supported")
 
-        # Dataset
+        train4val_str = self.parameters.dataset_params.get("train4val", "false")
+        train4val = str(train4val_str).lower() == "true"
+
+        # Dataset (aligned with current load_datasets.py interface)
         self.train_loader, self.val_loader, self.test_loader, self.mask_loader = init_dataset(
-            self.parameters.dataset_params, self.seed, self.mask_batch
+            params=self.parameters.dataset_params,
+            mask_batch=self.mask_batch,
+            mask_per_class_samples=self.per_class_samples,
+            train4val=train4val
         )
 
         # Model
@@ -105,14 +116,24 @@ class Experiment:
 
         for step in range(0, self.num_steps):
             # Generate mask
-            if step == self.warmup:
+            if step == 0: # Mask generation
+                if self.warmup > 0:  # Update batchnorm statistics flag
+                    self.warmup_step()
+
+                # Generate compression mask
                 if self.comp_class in COMPRESSORS and self.comp_class != "none":
+                    mask_tic = time.time()
                     self.compression_mask = mask_generation(
                         self.mask_batch, self.comp_class, self.model, self.device,
                         self.mask_loader, self.criterion, self.optimizer,
                         self.count_mask, self.sparsity, self.mask, self.seed,
-                        self.dataset_class, self.model_class, self.warmup, self.exp_class
+                        self.dataset_class, self.model_class, self.warmup, self.output_dir,
+                        self.exp_class
                     )
+                    mask_toc = time.time()
+                    print(f"Mask generation time: {mask_toc - mask_tic:.2f} seconds")
+                    self.logger.log_metric("mask_time", mask_toc - mask_tic)
+
                     # Update the count mask to track weights that will be updated.
                     self.update_count_mask(self.compression_mask)
                     print(f"Compression mask generated before step: {step}")
@@ -120,6 +141,9 @@ class Experiment:
                     # Prune the model
                     self.model = pbt_pruning(self.compression_mask, self.model)
                     print(f"Model pruned before step: {step}")
+
+                else:
+                    print(f"No compression mask generated")
 
             self.train_step(step)
             
@@ -172,6 +196,31 @@ class Experiment:
 
         self.logger.log_metric("weights_perc", weights_percentage)
 
+    def warmup_step(self):
+        """
+        Warmup step to update BatchNorm statistics while keeping model weights frozen.
+        """
+        print("Starting warmup step to update BatchNorm statistics...")
+        
+        self.model.train()
+        
+        # Freeze all parameters
+        for param in self.model.parameters():
+            param.requires_grad = False
+        
+        with torch.no_grad():
+            for i, data in enumerate(tqdm(self.train_loader, desc="Warmup - Updating BatchNorm", leave=False)):
+                inputs, labels = data[0].to(self.device), data[1].to(self.device)
+                
+                # Forward pass only (no gradient computation, no loss calculation)
+                _ = self.model(inputs)
+        
+        # Unfreeze all parameters for normal training
+        for param in self.model.parameters():
+            param.requires_grad = True
+        
+        print("Warmup step completed - BatchNorm statistics updated")
+
     def cache_model(self, init_w=False):
         self.weights_file = os.path.join(self.out_path, "classifier.pt")
         torch.save(self.model.state_dict(), self.weights_file)
@@ -195,9 +244,8 @@ class Experiment:
             loss.backward()
             
             # Keep sparsification for non selected weights
-            if step >= self.warmup:
-                if self.comp_class in COMPRESSORS and self.comp_class != "none":
-                    self.gradient_sparsification(self.compression_mask)
+            if self.comp_class in COMPRESSORS and self.comp_class != "none":
+                self.gradient_sparsification(self.compression_mask)
 
             self.optimizer.step()
 

@@ -1,8 +1,11 @@
-outputs/*
-data/cifar10/cifar-10-batches-py
-data/cifar10/cifar-10-python.tar.gz
-data/cifar100/cifar-100-python/
-data/cifar100/cifar-100-python.tar.gz
+data/MNIST
+data/cifar10/
+data/cifar100/
+data/tiny-imagenet-200/
+data/imagenet/
+outputs/
+exp_configs/done
+exp_configs/fail
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -167,5 +170,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-*Fisher_compressor_results/*
 .vscode/

@@ -1,7 +1,7 @@
 {
     "general": {
-        "id": "exp_random",
-        "description": "resnet18 random metric, mask batch size 1, warmup 0, sparsity 0.9, seed 0, structured False, distributed False",
+        "id": "exp_hutch_diag",
+        "description": "resnet18 hutch_diag metric, mask batch size 1, warmup 0, sparsity 0.9, seed 0, structured False, distributed False",
         "gpu": {
             "ngpus": 1,
             "gpu_id": 0
@@ -42,7 +42,7 @@
             }
         },
         "compressor": {
-            "class": "random",
+            "class": "hutch_diag",
             "mask": "global",
             "sparsity": 0.9,
             "warmup": 0,

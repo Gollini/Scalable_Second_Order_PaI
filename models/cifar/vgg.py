@@ -14,10 +14,11 @@ cfg = {
     'VGG19': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
 }
 
+
 class VGG(nn.Module):
-    def __init__(self, vgg_name, num_classes=10, enable_bn=True):
+    def __init__(self, vgg_name, num_classes=10):
         super(VGG, self).__init__()
-        self.features = self._make_layers(cfg[vgg_name], enable_bn)
+        self.features = self._make_layers(cfg[vgg_name])
         self.linear = nn.Linear(512, num_classes)
 
     def forward(self, x):
@@ -26,7 +27,7 @@ class VGG(nn.Module):
         out = self.linear(out)
         return out
 
-    def _make_layers(self, cfg, enable_bn):
+    def _make_layers(self, cfg):
         layers = []
         in_channels = 3
         layer_idx = 0  # To uniquely identify layers
@@ -37,7 +38,7 @@ class VGG(nn.Module):
             else:
                 layers.append(('conv_' + str(layer_idx), nn.Conv2d(in_channels, x, kernel_size=3, padding=1)))
                 layer_idx += 1
-                layers.append(('bn_' + str(layer_idx), nn.BatchNorm2d(x) if enable_bn else nn.Identity()))
+                layers.append(('bn_' + str(layer_idx), nn.BatchNorm2d(x)))
                 layer_idx += 1
                 layers.append(('relu_' + str(layer_idx), nn.ReLU(inplace=True)))
                 layer_idx += 1
