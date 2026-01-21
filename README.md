@@ -1,6 +1,6 @@
 # **What Scalable Second-Order Information Knows for Pruning at Initialization**
 
-This is the official repository for the Preprint "What Scalable Second-Order Information Knows for Pruning at Initialization." Link: ArXiV
+This is the official repository for the Preprint "What Scalable Second-Order Information Knows for Pruning at Initialization." Link: [ArXiV](https://arxiv.org/abs/2502.11450)
 
 
 ## **Abstract**
@@ -12,7 +12,7 @@ Recent research (Gur, 2018; Karikada, 2019) suggests that the top eigenvalues gu
 Our experiments show that these methods capture sufficient curvature information to improve the identification of critical parameters compared to first-order baselines, while maintaining linear complexity.
 Additionally, we empirically demonstrate that updating batch normalization statistics as a warmup phase improves the performance of data-dependent criteria and mitigates the issue of layer collapse. Notably, Hutchinson-based criteria consistently outperformed or matched existing PaI algorithms across various models (including VGG, ResNet, and ViT) and datasets (such as CIFAR-10/100, TinyImageNet, and ImageNet).
 
-Our findings suggest that scalable second-order approximations strike an effective balance between computational efficiency and accuracy, making them a valuable addition to the pruning toolkit. We make our code available 
+Our findings suggest that scalable second-order approximations strike an effective balance between computational efficiency and accuracy, making them a valuable addition to the pruning toolkit.
 
 ---
 
