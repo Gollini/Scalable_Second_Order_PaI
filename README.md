@@ -1,6 +1,6 @@
 # **What Scalable Second-Order Information Knows for Pruning at Initialization**
 
-This is the official repository for the Preprint "What Scalable Second-Order Information Knows for Pruning at Initialization." Link: [ArXiV](https://arxiv.org/abs/2502.11450)
+This is the official repository for "What Scalable Second-Order Information Knows for Pruning at Initialization." Accepted for CPAL 2026 Link: [ArXiV](https://arxiv.org/abs/2502.11450)
 
 
 ## **Abstract**
